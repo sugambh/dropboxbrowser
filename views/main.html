@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Bootstrap, from Twitter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="stylesheets/bootstrap.css" rel="stylesheet">
+    <style>
+      body {
+        padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+      }
+    </style>
+    <link href="stylesheets/bootstrap-responsive.css" rel="stylesheet">
+     <link href="stylesheets/style.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="static/js/html5shiv.js"></script>
+    <![endif]-->
+
+    <!-- Fav and touch icons -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="static/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="static/ico/apple-touch-icon-114-precomposed.png">
+      <link rel="apple-touch-icon-precomposed" sizes="72x72" href="static/ico/apple-touch-icon-72-precomposed.png">
+                    <link rel="apple-touch-icon-precomposed" href="static/ico/apple-touch-icon-57-precomposed.png">
+                                   <link rel="shortcut icon" href="static/ico/favicon.png">
+  </head>
+
+  <body>
+
+
+
+    <div class="container" style="text-align:center">
+
+      <h1>Dropbox Browser</h1>
+      <p>A minimal express js app for browsing dropbox</p>
+
+
+
+
+      
+    <div class="row">
+ 
+  <div class="col-lg-6">
+    <div class="input-group">
+      <input id="folder" type="text" class="form-control" placeholder="enter folder name">
+      
+    </div>
+    <span class="input-group-btn">
+        <button id="mybutton" class="btn btn-default btn-primary" type="button">Go!</button>
+      </span>   <!-- /input-group -->
+  </div><!-- /.col-lg-6 -->
+
+
+
+  <div class="col-lg-6">
+  <div id="message">
+  </div>
+
+  </div>
+  <div class="col-lg-6">
+  <div id="files">
+  </div>
+
+  </div>
+    <div class="col-lg-6">
+ 
+    <table id="file_table" class="table table-hover">
+      
+      </table>
+
+
+  </div>
+
+
+</div><!-- /.row -->
+      
+ 
+
+    </div> <!-- /container -->
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+  
+    <script type="text/javascript">
+    var response;
+    var files;
+    $("button").click(function(){
+         var table_body = document.getElementById("file_table");
+         table_body.innerHTML = '';     
+
+         var fdiv = document.getElementById("files");
+           fdiv.innerHTML = '';     
+         var url="";
+         var flag1=1;
+         var flag2=1;
+         var success_flag=0;
+         var folder_name=$('#folder').val();
+         if (typeof(Storage) != "undefined") {
+
+            if ( typeof(sessionStorage.getItem(folder_name) ) !== "undefined" && sessionStorage.getItem(folder_name) !== null ){
+              flag1=0;
+
+              response=sessionStorage.getItem(folder_name);
+               if(IsJsonString(response)){
+        alert("lo");
+        files=getFiles(response,folder_name);
+        if(files.length>0){
+           fdiv = document.getElementById("files");
+           fdiv.innerHTML = '';     
+          $("#files").append('<div class="col-lg-6"><div class="input-group"><input id="file_box" type="text"   onkeyup="search()" class="form-control" placeholder="type file name"></div></div>');
+            for(i=0;i<files.length;i++)
+                $('#file_table').append('<tr><td> '+files[i]+'</td></tr>');
+        
+        
+
+        }
+       }
+
+            }
+
+            
+          } else {
+          flag2=0;
+                        document.getElementById("message").innerHTML = "Sorry, your browser does not support Web Storage...";
+          }
+
+
+         if(Boolean(flag1)){
+          document.getElementById("message").innerHTML = "fetching from server";
+
+                   $.ajax({
+                    url: '/test/?folder='+folder_name,
+                    success: function(result){
+                          response=result;
+                          sessionStorage.setItem(folder_name,response);
+                           if(IsJsonString(response)){
+                                  files=getFiles(response,folder_name);
+                                  if(files.length>0){
+                                     fdiv = document.getElementById("files");
+                                     fdiv.innerHTML = '';     
+                                    $("#files").append('<div class="col-lg-6"><div class="input-group"><input id="file_box" type="text"   onkeyup="search()" class="form-control" placeholder="type file name"></div></div>');
+                                      for(i=0;i<files.length;i++)
+                                          $('#file_table').append('<tr><td> '+files[i]+'</td></tr>');
+                                  
+                                  
+
+                                  }
+                               }
+                    }});
+       }
+              else if(!Boolean(flag1) && Boolean(flag2))
+       {
+        
+          //$("#message").html("Taking from sessionStorage");
+       }
+
+    
+
+
+        
+    });
+
+
+
+function parse(){
+
+}
+
+
+function getFiles(response,folder_name) {
+    var files =[];
+    var json_response=JSON.parse(response);
+
+     var elements=json_response.contents;
+            if ( typeof(elements) !== "undefined" && elements !== null ) {
+
+
+              for(var i = 0; i < elements.length; i++) {
+                   if(elements[i].is_dir==false){
+                  var obj = elements[i];
+
+                  obj.path=obj.path.toLowerCase();
+                  folder_name=folder_name.toLowerCase();
+                  
+
+                  var index = obj.path.indexOf(folder_name);
+                  if(index != -1){
+                    
+                    files.push(obj.path.substr(index+folder_name.length+1));
+                  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              }
+              }
+
+            }
+        
+    return files;
+}
+
+function IsJsonString(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
+function search(){
+  var value = document.getElementById("file_box").value;
+  var table_body = document.getElementById("file_table");
+  table_body.innerHTML = '';     
+  arraysearch(value);
+}
+
+function arraysearch(value){
+  
+    for(i=0; i<files.length; i++){
+      
+        if(files[i].indexOf(value)>-1){
+            $('#file_table').append('<tr><td> '+files[i]+'</td></tr>');
+        }
+    }
+}
+
+
+    </script>
+
+  </body>
+</html>
